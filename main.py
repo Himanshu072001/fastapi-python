@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+from fastapi import status
 from typing import Optional
 from fastapi import FastAPI
 from fastapi import Body
@@ -56,7 +58,8 @@ notes_db = [{"id": 1, "note": "Sample Note", "category": "General", "bookmarked"
             {"id": 2, "note": "Another Note", "category": "Work", "bookmarked": True, "saved": True}]
 
 # Create a new note
-@app.post("/notes/create")
+#satus code 201 means resource created successfully & status code will be shown in the postman response
+@app.post("/notes/create", status_code=status.HTTP_201_CREATED)
 async def create_note_db(note: Note):
     new_id = len(notes_db) + 1
     new_note = note.dict()
@@ -71,12 +74,14 @@ async def get_all_notes():
     return {"notes": notes_db}  
 
 # Read a specific note by ID
-@app.get("/notes/{note_id}")
+@app.get("/notes/{id}")
 async def get_note_by_id(id: int):
     for note in notes_db:
         if note["id"] == id:
             return {"note": note}
-    return {"error": "Note not found"}
+    raise HTTPException(status_code=404, detail= f"note with note_Id = {id} not found")
+   # return {"error": "Note not found"}
+
 
 # Update a note by ID
 @app.put("/notes/update/{id}")
