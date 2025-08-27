@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from fastapi import status
+from fastapi import status, Response
 from typing import Optional
 from fastapi import FastAPI
 from fastapi import Body
@@ -94,12 +94,14 @@ async def update_note(id: int, updated_note: Note):
     return {"error": "Note not found"}  
 
 # Delete a note by ID
-@app.delete("/notes/delete/{id}")
+@app.delete("/notes/delete/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_note(id: int):
     for index, note in enumerate(notes_db):
         if note["id"] == id:
             deleted_note = notes_db.pop(index)
-            return {"message": "Note deleted successfully", "note": deleted_note}
-    return {"error": "Note not found"}
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+            #return {"message": "Note deleted successfully", "note": deleted_note}
+    raise HTTPException(status_code=404, detail= f"note with note_Id = {id} not found")
+    # return {"error": "Note not found"}
 
 
