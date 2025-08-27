@@ -12,12 +12,12 @@ class Note(BaseModel):
     bookmarked: bool = False # Optional field with a default value
     saved: Optional[bool] = None # Optional field without a default value 
 
-
+# Simple GET endpoint to check if the API is running
 @app.get("/")
 async def read_root():
     return {"data": "Welecome to FastAPI! This is a simple API built with FastAPI."}
 
-
+# Simple GET endpoint to fetch notes
 @app.get("/notes")
 async def read_notes():
     return {"notes": ["Note 1", "Note 2", "Note 3"]}
@@ -35,19 +35,66 @@ async def create_note(payload: dict = Body(...)):
     print(payload)
     return {"message": f"Note with params '{payload}' created successfully!"}
 
+# Method 3: Using Pydantic model
 @app.post("/create_notes_model")
 async def create_note(note: Note):
     print(note)
     print(note.dict())
     return {"message": f"Note '{note.note}' with category '{note.category}' '{note.bookmarked}' {note.saved} created successfully!"}
     
-
+# Method 4: Using only one parameter in the body
 @app.post("/create_category")
 async def create_category(category: str):
     print(f"Creating category: {category}")
     return {"message": f"Category '{category}' created successfully!"}  
 
 
+# CRUD Operations
 
+# In-memory storage for notes
+notes_db = [{"id": 1, "note": "Sample Note", "category": "General", "bookmarked": False, "saved": None},
+            {"id": 2, "note": "Another Note", "category": "Work", "bookmarked": True, "saved": True}]
+
+# Create a new note
+@app.post("/notes/create")
+async def create_note_db(note: Note):
+    new_id = len(notes_db) + 1
+    new_note = note.dict()
+    new_note["id"] = new_id
+    notes_db.append(new_note)
+    print(notes_db)
+    return {"message": "Note created successfully", "note": new_note}       
+
+# Read all notes
+@app.get("/notes/all")
+async def get_all_notes():
+    return {"notes": notes_db}  
+
+# Read a specific note by ID
+@app.get("/notes/{note_id}")
+async def get_note_by_id(id: int):
+    for note in notes_db:
+        if note["id"] == id:
+            return {"note": note}
+    return {"error": "Note not found"}
+
+# Update a note by ID
+@app.put("/notes/update/{id}")
+async def update_note(id: int, updated_note: Note):
+    for index, note in enumerate(notes_db):
+        if note["id"] == id:
+            notes_db[index] = updated_note.dict()
+            notes_db[index]["id"] = id
+            return {"message": "Note updated successfully", "note": notes_db[index]}
+    return {"error": "Note not found"}  
+
+# Delete a note by ID
+@app.delete("/notes/delete/{id}")
+async def delete_note(id: int):
+    for index, note in enumerate(notes_db):
+        if note["id"] == id:
+            deleted_note = notes_db.pop(index)
+            return {"message": "Note deleted successfully", "note": deleted_note}
+    return {"error": "Note not found"}
 
 
