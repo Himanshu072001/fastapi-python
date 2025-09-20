@@ -4,6 +4,9 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi import Body
 from pydantic import BaseModel
+import psycopg2
+from psycopg2.extras import RealDictCursor
+import time
 
 app = FastAPI()
 
@@ -13,6 +16,18 @@ class Note(BaseModel):
     category: str  
     bookmarked: bool = False # Optional field with a default value
     saved: Optional[bool] = None # Optional field without a default value 
+
+while True:
+    try:
+        conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='', cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print("Database connection was successful!")
+        break;
+    except Exception as error:
+        print("Connecting to database failed")
+        print("Error:", error)
+        time.sleep(2)   
+
 
 # Simple GET endpoint to check if the API is running
 @app.get("/")
