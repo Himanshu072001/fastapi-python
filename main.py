@@ -19,7 +19,7 @@ class Note(BaseModel):
 
 while True:
     try:
-        conn = psycopg2.connect(host='localhost', database='fastapi', user='postgres', password='', cursor_factory=RealDictCursor)
+        conn = psycopg2.connect(host='localhost', database='fastapidb', user='postgres', password='Himanshu@2019', cursor_factory=RealDictCursor)
         cursor = conn.cursor()
         print("Database connection was successful!")
         break;
@@ -120,3 +120,47 @@ async def delete_note(id: int):
     # return {"error": "Note not found"}
 
 
+#DB related operations Using PostgresSQL 
+# Read all notes from the database
+@app.get("/fetch_notes/all")
+async def get_all_notes():
+    cursor.execute("SELECT * FROM notes")
+    notes = cursor.fetchall()
+    return {"notes": notes}  
+
+@app.post("/add_notes", status_code=status.HTTP_201_CREATED)
+async def add_note_db(note: Note):
+    cursor.execute("INSERT INTO notes (id, title, description, is_bookmarked) VALUES (%s, %s, %s, %s) RETURNING *",
+                   ('101', note.note, note.category, note.bookmarked))
+    new_note = cursor.fetchone()
+    conn.commit()
+    return {"message": "Note added successfully", "note": new_note} 
+
+
+@app.get("/fetch_notes_db/{id}")
+async def get_note_by_id(id: int):
+    cursor.execute("SELECT * FROM notes WHERE ID = %s", (str(id)))
+    note = cursor.fetchone()
+    if not note:
+        raise HTTPException(status_code=404, detail= f"note with note_Id = {id} not found")
+    return {"note": note}   
+
+@app.delete("/delete_notes_db/{id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_note_db(id: int):
+    cursor.execute("DELETE FROM notes WHERE ID = %s RETURNING *", (str(id),))
+    deleted_note = cursor.fetchone()
+    conn.commit()
+    if not deleted_note:
+        raise HTTPException(status_code=404, detail= f"note with note_Id = {id} not found")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@app.put("/update_notes_db/{id}")
+async def update_note_db(id: int, updated_note: Note):
+    cursor.execute("UPDATE notes SET title = %s, description = %s, is_bookmarked = %s WHERE ID = %s RETURNING *",
+                   (updated_note.note, updated_note.category, updated_note.bookmarked, str(id)))
+    note = cursor.fetchone()
+    conn.commit()
+    if not note:
+        raise HTTPException(status_code=404, detail= f"note with note_Id = {id} not found")
+    return {"message": "Note updated successfully", "note": note}
